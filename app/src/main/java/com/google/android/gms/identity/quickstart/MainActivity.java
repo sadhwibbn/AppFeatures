@@ -39,6 +39,7 @@ import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
+import com.google.android.gms.common.SignInButton;
 
 /**
  * Demonstrates Google Sign-In, retrieval of user's profile information, and

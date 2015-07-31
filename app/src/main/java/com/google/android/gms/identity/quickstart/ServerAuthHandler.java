@@ -25,6 +25,7 @@ import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.Scope;
+import com.google.android.gms.common.SignInButton;
 
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
