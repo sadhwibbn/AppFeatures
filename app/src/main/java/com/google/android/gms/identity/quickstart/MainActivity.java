@@ -31,15 +31,18 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
 import com.google.android.gms.common.Scopes;
+import com.google.android.gms.common.api.CommonStatusCodes;
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.common.api.GoogleApiClient.ConnectionCallbacks;
 import com.google.android.gms.common.api.GoogleApiClient.OnConnectionFailedListener;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.common.api.Status;
+import com.google.android.gms.plus.People;
 import com.google.android.gms.plus.Plus;
 import com.google.android.gms.plus.model.people.Person;
 import com.google.android.gms.common.SignInButton;
+import com.google.android.gms.plus.model.people.PersonBuffer;
 
 /**
  * Demonstrates Google Sign-In, retrieval of user's profile information, and
@@ -47,7 +50,7 @@ import com.google.android.gms.common.SignInButton;
  */
 public class MainActivity extends FragmentActivity implements
         ConnectionCallbacks, OnConnectionFailedListener, View.OnClickListener,
-        CheckBox.OnCheckedChangeListener {
+        CheckBox.OnCheckedChangeListener,  ResultCallback<People.LoadPeopleResult>{
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -115,7 +118,7 @@ public class MainActivity extends FragmentActivity implements
         GoogleApiClient.Builder builder = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
-                .addApi(Plus.API)
+                .addApi(Plus.API, Plus.PlusOptions.builder().build())
                 .addScope(new Scope(Scopes.PROFILE));
 
         if (mRequestServerAuthCode) {
@@ -233,12 +236,17 @@ public class MainActivity extends FragmentActivity implements
         // establish a service connection to Google Play services.
         Log.i(TAG, "onConnected");
 
+        // this is required to return a non-null current user
+        Plus.PeopleApi.loadVisible(mGoogleApiClient, null).setResultCallback(this);
+
         // Update the user interface to reflect that the user is signed in.
         updateUI(true);
 
         // Retrieve some profile information to personalize our app for the user.
         Person currentUser = Plus.PeopleApi.getCurrentPerson(mGoogleApiClient);
 
+        if(currentUser==null)
+            System.out.println("Current user is null");
         mStatus.setText(String.format(
                 getResources().getString(R.string.signed_in_as),
                 currentUser.getDisplayName()));
@@ -345,6 +353,23 @@ public class MainActivity extends FragmentActivity implements
             findViewById(R.id.layout_server_auth).setVisibility(View.GONE);
         } else {
             findViewById(R.id.layout_server_auth).setVisibility(View.VISIBLE);
+        }
+    }
+
+    @Override
+    public void onResult(People.LoadPeopleResult peopleData) {
+        if (peopleData.getStatus().getStatusCode() == CommonStatusCodes.SUCCESS) {
+            PersonBuffer personBuffer = peopleData.getPersonBuffer();
+            try {
+                int count = personBuffer.getCount();
+                for (int i = 0; i < count; i++) {
+                    Log.d(TAG, "Display name: " + personBuffer.get(i).getDisplayName());
+                }
+            } finally {
+                personBuffer.close();
+            }
+        } else {
+            Log.e(TAG, "Error requesting visible circles: " + peopleData.getStatus());
         }
     }
 }
